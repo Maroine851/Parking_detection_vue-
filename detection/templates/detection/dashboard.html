@@ -25,9 +25,9 @@
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
     /* LAYOUT */
-    .main-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:20px 24px;max-width:1200px;margin:0 auto}
-    .col-left{display:flex;flex-direction:column;gap:12px}
-    .col-right{display:flex;flex-direction:column;gap:12px}
+    .main-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:12px 24px;max-width:1400px;margin:0 auto}
+    .col-left{display:flex;flex-direction:column;gap:8px}
+    .col-right{display:flex;flex-direction:column;gap:8px}
 
     /* VIDEO */
     .video-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
@@ -39,8 +39,7 @@
     .ctrl-badge.accent{background:var(--accent-dim);border-color:#00e5a030;color:var(--accent)}
 
     /* ── VRAIE VIDÉO YOLO ── */
-    .video-stream{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#060810}
-
+    .video-stream{width:100%;max-height:380px;object-fit:contain;display:block;background:#060810}
     /* STAT ROW */
     .stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--border)}
     .stat-card{display:flex;flex-direction:column;align-items:center;padding:14px 12px;gap:3px;border-right:1px solid var(--border)}
