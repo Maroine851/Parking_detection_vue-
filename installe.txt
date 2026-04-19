@@ -1,0 +1,10 @@
+pip install opencv-python
+pip install ultralytics
+
+*************
+ultralytics will automatically install:
+PyTorch (if not installed)
+YOLO models (like YOLOv8)
+Other dependencies
+*****************
+

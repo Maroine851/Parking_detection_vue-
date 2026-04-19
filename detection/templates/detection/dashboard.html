@@ -1,0 +1,359 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkVision — Détection ML</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0a0c10;--surface:#111418;--surface2:#181c22;--surface3:#1e232b;--border:#ffffff0f;--border-hi:#ffffff1f;--accent:#00e5a0;--accent-dim:#00e5a015;--accent2:#3b82f6;--text:#e8ecf0;--muted:#5a6270;--muted2:#7a8490;--red:#f43f5e;--red-dim:#f43f5e15}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+    /* NAV */
+    .topnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg);border-bottom:1px solid var(--border)}
+    .nav-brand{display:flex;align-items:center;gap:12px}
+    .brand-icon{width:32px;height:32px;background:var(--accent);color:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+    .brand-name{font-size:16px;font-weight:800}
+    .brand-sub{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-left:4px}
+    .nav-right{display:flex;align-items:center;gap:16px}
+    .nav-time{font-family:'Space Mono',monospace;font-size:13px;color:var(--muted2)}
+    .live-pill{display:flex;align-items:center;gap:6px;background:#f43f5e18;border:1px solid #f43f5e30;border-radius:20px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--red)}
+    .live-dot{width:6px;height:6px;background:var(--red);border-radius:50%;animation:blink 1.4s ease infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+    /* LAYOUT */
+    .main-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;padding:20px 24px;max-width:1200px;margin:0 auto}
+    .col-left{display:flex;flex-direction:column;gap:12px}
+    .col-right{display:flex;flex-direction:column;gap:12px}
+
+    /* VIDEO */
+    .video-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .video-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+    .section-label{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+    .video-zone{font-size:13px;font-weight:700}
+    .video-controls{display:flex;gap:6px}
+    .ctrl-badge{font-size:9px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border-hi);border-radius:20px;color:var(--muted2);letter-spacing:.5px}
+    .ctrl-badge.accent{background:var(--accent-dim);border-color:#00e5a030;color:var(--accent)}
+
+    /* ── VRAIE VIDÉO YOLO ── */
+    .video-stream{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#060810}
+
+    /* STAT ROW */
+    .stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--border)}
+    .stat-card{display:flex;flex-direction:column;align-items:center;padding:14px 12px;gap:3px;border-right:1px solid var(--border)}
+    .stat-card:last-child{border-right:none}
+    .stat-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);text-align:center}
+    .stat-value{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;line-height:1}
+    .stat-value.green{color:var(--accent)}.stat-value.red{color:var(--red)}.stat-value.blue{color:var(--accent2)}
+    .stat-sub{font-size:9px;color:var(--muted)}
+
+    /* TOTAL BAR */
+    .total-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .total-icon{font-size:20px;color:var(--accent2);flex-shrink:0}
+    .total-left{display:flex;align-items:center;gap:12px;flex:1}
+    .total-label{font-size:12px;font-weight:600}
+    .total-sub{font-size:10px;color:var(--muted);margin-top:1px}
+    .total-right{display:flex;align-items:baseline;gap:5px}
+    .total-number{font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--text)}
+    .total-unit{font-size:11px;color:var(--muted)}
+    .total-progress{width:100%}
+    .progress-track{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;transition:width .6s ease}
+
+    /* HISTORY TABLE */
+    .history-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .history-table{width:100%;border-collapse:collapse;font-size:11px}
+    .history-table th{padding:8px 12px;text-align:left;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500}
+    .history-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+    .history-table tr:last-child td{border-bottom:none}
+    .history-table tr:hover td{background:var(--surface2)}
+    .spot-pill{font-family:'Space Mono',monospace;font-size:10px;background:var(--accent-dim);color:var(--accent);border:1px solid #00e5a025;padding:2px 7px;border-radius:4px}
+    .price-val{color:var(--accent2);font-family:'Space Mono',monospace}
+
+    /* PANELS */
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .panel-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+    .panel-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+    .results-count{font-size:10px;background:var(--accent-dim);color:var(--accent);border:1px solid #00e5a025;padding:2px 8px;border-radius:20px;font-family:'Space Mono',monospace}
+
+    /* SEARCH */
+    .search-panel{padding-bottom:16px}
+    .field-group{padding:14px 16px 0}
+    .field-label{display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .slider-wrap{display:flex;align-items:center;gap:10px}
+    input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--surface3);border-radius:2px;outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);transition:transform .15s}
+    input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.2)}
+    .slider-val{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);min-width:44px;text-align:right;white-space:nowrap}
+    .slider-hints{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px}
+    .cost-preview{margin:14px 16px 0;padding:10px 14px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:space-between}
+    .cost-label{font-size:10px;color:var(--muted)}
+    .cost-value{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--accent2)}
+    .search-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 16px 0;width:calc(100% - 32px);padding:11px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:transform .15s,opacity .15s}
+    .search-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+    /* SPOTS LIST */
+    .spots-list{overflow-y:auto;max-height:280px}
+    .spot-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .15s}
+    .spot-row:last-child{border-bottom:none}
+    .spot-row:not(.occupied):hover{background:var(--surface2);cursor:pointer}
+    .spot-row.occupied{opacity:.45}
+    .spot-row-left{display:flex;flex-direction:column;gap:2px}
+    .spot-row-id{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent)}
+    .spot-row-info{font-size:10px;color:var(--muted)}
+    .spot-status{font-family:'Space Mono',monospace;font-size:8px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;border:1px solid}
+    .spot-status.free{background:var(--accent-dim);border-color:#00e5a030;color:var(--accent)}
+    .spot-status.occ{background:var(--red-dim);border-color:#f43f5e30;color:var(--red)}
+
+    .spots-list::-webkit-scrollbar{width:4px}
+    .spots-list::-webkit-scrollbar-track{background:var(--surface)}
+    .spots-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+    @media(max-width:800px){.main-layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="brand-icon">P</div>
+    <span class="brand-name">ParkVision</span>
+    <span class="brand-sub">YOLOv8 Detection</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-time" id="clock">--:--:--</span>
+    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+  </div>
+</nav>
+
+<main class="main-layout">
+
+  <!-- ═══ COLONNE GAUCHE ═══ -->
+  <div class="col-left">
+
+    <!-- FLUX VIDÉO YOLO -->
+    <section class="video-panel">
+      <div class="video-header">
+        <div class="video-title-group">
+          <span class="section-label">Camera Feed — YOLOv8</span>
+          <span class="video-zone">Parking Nord · Détection en temps réel</span>
+        </div>
+        <div class="video-controls">
+          <span class="ctrl-badge">yolov8s.pt</span>
+          <span class="ctrl-badge accent">MJPEG Stream</span>
+        </div>
+      </div>
+      <!-- ✅ Vraie vidéo traitée par YOLO -->
+      <img class="video-stream"
+           src="{% url 'video_feed' %}"
+           alt="Flux vidéo parking">
+    </section>
+
+    <!-- STAT CARDS -->
+    <section class="video-panel">
+      <div class="stat-row">
+        <div class="stat-card">
+          <span class="stat-label">Places libres</span>
+          <span class="stat-value green" id="free-count">{{ free_count }}</span>
+          <span class="stat-sub">sur {{ total_spots }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Voitures détectées</span>
+          <span class="stat-value red" id="occ-count">{{ occupied_count }}</span>
+          <span class="stat-sub">actuellement</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Taux d'occupation</span>
+          <span class="stat-value blue" id="occ-pct">{{ occupancy_pct }}%</span>
+          <span class="stat-sub">zone entière</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOTAL VIDÉO -->
+    <div class="total-bar">
+      <span class="total-icon">◈</span>
+      <div class="total-left">
+        <div>
+          <div class="total-label">Total véhicules détectés (session)</div>
+          <div class="total-sub">Enregistrés dans parking.db</div>
+        </div>
+      </div>
+      <div class="total-right">
+        <span class="total-number" id="total-video">{{ total_video }}</span>
+        <span class="total-unit">sessions</span>
+      </div>
+      <div class="total-progress">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:{{ occupancy_pct }}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE parking.db -->
+    <section class="history-panel">
+      <div class="panel-header">
+        <span class="panel-title">Historique des sessions</span>
+        <span class="results-count">parking.db</span>
+      </div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Place</th>
+            <th>Voiture</th>
+            <th>Durée (min)</th>
+            <th>Prix (MAD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in history %}
+          <tr>
+            <td><span class="spot-pill">{{ log.spot }}</span></td>
+            <td>{{ log.car_id }}</td>
+            <td>{{ log.duration|floatformat:1 }}</td>
+            <td><span class="price-val">{{ log.price|floatformat:2 }} MAD</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Aucune session enregistrée</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+  </div><!-- /col-left -->
+
+  <!-- ═══ COLONNE DROITE ═══ -->
+  <div class="col-right">
+
+    <!-- RECHERCHE -->
+    <section class="panel search-panel">
+      <div class="panel-header">
+        <span class="panel-title">Recherche de place</span>
+        <span style="font-size:16px;color:var(--muted)">⌕</span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Prix maximum (MAD / heure)</label>
+        <div class="slider-wrap">
+          <input type="range" id="price-slider" min="1" max="20" value="10" step="1">
+          <span class="slider-val" id="price-val">10 MAD</span>
+        </div>
+        <div class="slider-hints"><span>1 MAD</span><span>20 MAD</span></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Durée souhaitée (heures)</label>
+        <div class="slider-wrap">
+          <input type="range" id="time-slider" min="1" max="12" value="2" step="1">
+          <span class="slider-val" id="time-val">2 hrs</span>
+        </div>
+        <div class="slider-hints"><span>1 hr</span><span>12 hrs</span></div>
+      </div>
+
+      <div class="cost-preview">
+        <span class="cost-label">Coût estimé</span>
+        <span class="cost-value" id="cost-preview">20 MAD</span>
+      </div>
+
+      <button class="search-btn" id="search-btn">
+        <span>Trouver une place</span>
+        <span>→</span>
+      </button>
+    </section>
+
+    <!-- RÉSULTATS -->
+    <section class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Places disponibles</span>
+        <span class="results-count" id="results-count">{{ free_count }} libre(s)</span>
+      </div>
+      <div class="spots-list" id="spots-list">
+        {% for spot in spots %}
+        <div class="spot-row {% if spot.status == 'occupied' %}occupied{% endif %}">
+          <div class="spot-row-left">
+            <span class="spot-row-id">{{ spot.id }}</span>
+            <span class="spot-row-info">{{ spot.price }} MAD/hr · Zone {{ spot.zone }}</span>
+          </div>
+          <span class="spot-status {% if spot.status == 'free' %}free{% else %}occ{% endif %}">
+            {% if spot.status == 'free' %}LIBRE{% else %}OCCUPÉ{% endif %}
+          </span>
+        </div>
+        {% empty %}
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
+          En attente de détection…
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+  </div><!-- /col-right -->
+
+</main>
+
+<script>
+// ── Horloge ──
+function tick(){
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('fr-FR');
+}
+setInterval(tick, 1000); tick();
+
+// ── Sliders ──
+const ps = document.getElementById('price-slider');
+const ts = document.getElementById('time-slider');
+const pv = document.getElementById('price-val');
+const tv = document.getElementById('time-val');
+const cp = document.getElementById('cost-preview');
+
+function updateCost(){
+  pv.textContent = ps.value + ' MAD';
+  tv.textContent = ts.value + ' hr' + (ts.value > 1 ? 's' : '');
+  cp.textContent = (parseInt(ps.value) * parseInt(ts.value)) + ' MAD';
+}
+ps.addEventListener('input', updateCost);
+ts.addEventListener('input', updateCost);
+
+// ── Recherche ──
+document.getElementById('search-btn').addEventListener('click', function(){
+  this.textContent = 'Recherche…';
+  this.disabled = true;
+  const btn = this;
+
+  fetch(`/search/?price=${ps.value}&time=${ts.value}`)
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('spots-list');
+      document.getElementById('results-count').textContent = data.count + ' résultat(s)';
+      if(data.spots.length === 0){
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Aucune place disponible.</div>';
+        return;
+      }
+      list.innerHTML = data.spots.map(s => `
+        <div class="spot-row">
+          <div class="spot-row-left">
+            <span class="spot-row-id">${s.id}</span>
+            <span class="spot-row-info">${s.price} MAD/hr · Zone ${s.zone} · Total: ${s.total_cost} MAD</span>
+          </div>
+          <span class="spot-status free">LIBRE</span>
+        </div>`).join('');
+    })
+    .finally(() => { btn.innerHTML = '<span>Trouver une place</span><span>→</span>'; btn.disabled = false; });
+});
+
+// ── Refresh stats toutes les 3 secondes ──
+setInterval(() => {
+  fetch('/live-stats/')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('free-count').textContent = d.free;
+      document.getElementById('occ-count').textContent  = d.occupied;
+      document.getElementById('occ-pct').textContent    = d.occupancy_pct + '%';
+      document.getElementById('progress-fill').style.width = d.occupancy_pct + '%';
+    });
+}, 3000);
+</script>
+</body>
+</html>

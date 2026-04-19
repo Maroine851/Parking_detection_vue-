@@ -1,0 +1,10 @@
+Une seule fois
+Appliquer les migrations Django
+Configure la base de données Django (ne touche pas à parking.db, c'est séparé).
+1-python manage.py migrate --run-syncdb
+
+Lancer le serveur Django: 
+
+À faire chaque fois que tu veux travailler sur le projet. Le serveur charge YOLO au démarrage — attends 10-20 secondes.
+2-python manage.py runserver
+Ouvre ton navigateur sur → http://127.0.0.1:8000
